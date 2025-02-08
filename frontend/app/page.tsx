@@ -1,53 +1,25 @@
-"use client"
+import AudioUploader from "@/components/audio-uploader";
+import getRequestClient from "./lib/getRequestClient";
+import Link from "next/link";
 
-const HomePage = () => {
 
+const HomePage = async () => {
+  const client = getRequestClient();
 
-
-  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    console.log("Uploading file...");
-    const form = e.currentTarget as HTMLFormElement;
-    const file = form.audioField.files[0];
-
-    const formData = new FormData();
-
-    formData.append("audioField", file);
-
-    const endpoint = "http://localhost:4000/add-audio";
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      body: formData,
-    })
-
-    if (response.ok) {
-      console.log("File uploaded successfully");
-      // reset the form
-      form.reset();
-      alert("File uploaded successfully");
-    }
-  }
+  const data = await client.audio.list();
 
   return (
-    <section className="flex w-full flex-col justify-center items-center">
-      <form
-        // method="POST"
-        // encType="multipart/form-data"
-        onSubmit={handleUpload}
-      >
-        <label htmlFor="audioField">Single file upload:</label>
-        <input
-          type="file"
-          name="audioField"
-          // acceept oinlyu audio files
-          accept="audio/*"
-        />
-        <input type="submit" />
-      </form>
+    <section className="space-y-10">
+      <AudioUploader />
+      <div className="flex flex-col gap-2 overflow-y-scroll">
+        {data.audios.map((audio) => (
+          <Link href={`/audio/${audio.id}`} key={audio.id} className="">
+            {audio.fileName}
+          </Link>
+        ))}
+      </div>
     </section>
-  );
+  )
 }
 
 export default HomePage;

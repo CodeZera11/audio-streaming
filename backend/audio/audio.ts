@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { drizzle } from "../database";
 import { media } from "../schema";
+import { eq } from "drizzle-orm";
 
 interface Audio {
   id: string;
@@ -89,5 +90,74 @@ export const list = api<{}, AudioList>(
     const data = await drizzle.select().from(media);
 
     return { audios: data ?? [] };
+  }
+);
+
+// export const getOne = api<{ id: string }, Audio>(
+//   {
+//     expose: true,
+//     method: "GET",
+//     path: "/audio/:id",
+//   },
+//   async ({ id }) => {
+//     const data = await drizzle.select().from(media).where(eq(media.id, id));
+//     if (!data) {
+//       throw new Error("Audio not found");
+//     }
+
+//     return { ...data[0] };
+//   }
+// );
+
+export const streamAudio = api.raw(
+  {
+    expose: true,
+    method: "GET",
+    path: "/audio/:id",
+  },
+  async (req, res) => {
+    const id = "11489834-544c-4ca2-ac5d-e8c875dc2a5b"; // Change this to the ID of the audio you want to stream
+    const data = await drizzle.select().from(media).where(eq(media.id, id));
+
+    if (!data) {
+      throw new Error("Audio not found");
+    }
+
+    const filePath = path.join("uploads", data[0].fileName); // Change filename dynamically if needed
+
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "File not found" }));
+      return;
+    }
+
+    const stat = fs.statSync(filePath);
+    const fileSize = stat.size;
+    const range = req.headers.range;
+
+    if (range) {
+      // Handle partial content for seeking in audio
+      const parts = range.replace(/bytes=/, "").split("-");
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const chunkSize = end - start + 1;
+
+      res.writeHead(206, {
+        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
+        "Accept-Ranges": "bytes",
+        "Content-Length": chunkSize,
+        "Content-Type": "audio/mpeg",
+      });
+
+      fs.createReadStream(filePath, { start, end }).pipe(res);
+    } else {
+      // Stream full audio if no range is specified
+      res.writeHead(200, {
+        "Content-Length": fileSize,
+        "Content-Type": "audio/mpeg",
+      });
+
+      fs.createReadStream(filePath).pipe(res);
+    }
   }
 );

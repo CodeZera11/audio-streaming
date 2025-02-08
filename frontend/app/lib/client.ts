@@ -63,6 +63,17 @@ export interface ClientOptions {
 }
 
 export namespace audio {
+    export interface Audio {
+        id: string
+        fileName: string
+        location: string
+        "created_at": string | null
+        "updated_at": string | null
+    }
+
+    export interface AudioList {
+        audios: Audio[]
+    }
 
     export class ServiceClient {
         private baseClient: BaseClient
@@ -73,6 +84,18 @@ export namespace audio {
 
         public async add(method: "POST", body?: BodyInit, options?: CallParameters): Promise<globalThis.Response> {
             return this.baseClient.callAPI(method, `/add-audio`, body, options)
+        }
+
+        public async getOne(id: string): Promise<Audio> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/audio/${encodeURIComponent(id)}`)
+            return await resp.json() as Audio
+        }
+
+        public async list(): Promise<AudioList> {
+            // Now make the actual call to the API
+            const resp = await this.baseClient.callTypedAPI("GET", `/list-audio`)
+            return await resp.json() as AudioList
         }
     }
 }
