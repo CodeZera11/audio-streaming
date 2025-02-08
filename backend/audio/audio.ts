@@ -3,6 +3,20 @@ import busboy from "busboy";
 import log from "encore.dev/log";
 import fs from "fs";
 import path from "path";
+import { drizzle } from "../database";
+import { media } from "../schema";
+
+interface Audio {
+  id: string;
+  fileName: string;
+  location: string;
+  created_at: Date | null;
+  updated_at: Date | null;
+}
+
+interface AudioList {
+  audios: Audio[];
+}
 
 export const add = api.raw(
   {
@@ -13,6 +27,10 @@ export const add = api.raw(
   },
   async (req, res) => {
     log.info("Uploading file...." + req.headers["content-type"]);
+
+    let saveLocation: string;
+    let fileName: string;
+
     const bb = busboy({
       headers: req.headers,
       limits: { files: 1 },
@@ -22,7 +40,8 @@ export const add = api.raw(
       if (!fs.existsSync("uploads")) {
         fs.mkdirSync("uploads");
       }
-      const saveLocation = path.join("uploads", info.filename);
+      fileName = info.filename;
+      saveLocation = path.join("uploads", info.filename);
       const writeStream = fs.createWriteStream(saveLocation);
 
       file.pipe(writeStream);
@@ -39,6 +58,10 @@ export const add = api.raw(
     bb.on("finish", async () => {
       bb.emit("close");
       log.info("Busboy processing complete.");
+      await drizzle.insert(media).values({
+        fileName: fileName,
+        location: saveLocation,
+      });
       res.writeHead(200, {
         Connection: "close",
         "Content-Type": "application/json",
@@ -53,5 +76,18 @@ export const add = api.raw(
 
     req.pipe(bb);
     return;
+  }
+);
+
+export const list = api<{}, AudioList>(
+  {
+    method: "GET",
+    expose: true,
+    path: "/list-audio",
+  },
+  async () => {
+    const data = await drizzle.select().from(media);
+
+    return { audios: data ?? [] };
   }
 );

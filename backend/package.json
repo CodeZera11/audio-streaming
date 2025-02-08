@@ -5,13 +5,19 @@
   "description": "Encore + Next Starter",
   "license": "MPL-2.0",
   "type": "module",
+  "scripts": {
+    "db:generate": "drizzle-kit generate"
+  },
   "devDependencies": {
     "@types/busboy": "^1.5.4",
     "@types/node": "^20",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "drizzle-kit": "^0.27.1"
   },
   "dependencies": {
     "busboy": "^1.6.0",
-    "encore.dev": "^1.46.4"
+    "encore.dev": "^1.46.4",
+    "drizzle-orm": "^0.36.0",
+    "pg": "^8.13.1"
   }
 }
