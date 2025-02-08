@@ -1,0 +1,17 @@
+{
+  "name": "backend",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Encore + Next Starter",
+  "license": "MPL-2.0",
+  "type": "module",
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/node": "^20",
+    "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "encore.dev": "^1.46.4"
+  }
+}
