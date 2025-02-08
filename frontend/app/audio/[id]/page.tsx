@@ -25,7 +25,7 @@ const AudioPage = async ({ params }: AudioPageProps) => {
     <div>
       {JSON.stringify(audio.fileName)}
       <audio controls>
-        <source src={`http://localhost:4000/audio/${audio.filename}`} type="audio/mpeg" />
+        <source src={`http://localhost:4000/audio/${id}`} type="audio/mpeg" />
         Your browser does not support the audio element.
       </audio>
     </div>

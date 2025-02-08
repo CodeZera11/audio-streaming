@@ -6,6 +6,7 @@ import path from "path";
 import { drizzle } from "../database";
 import { media } from "../schema";
 import { eq } from "drizzle-orm";
+import { APICallMeta, currentRequest } from "encore.dev";
 
 interface Audio {
   id: string;
@@ -116,7 +117,16 @@ export const streamAudio = api.raw(
     path: "/audio/:id",
   },
   async (req, res) => {
-    const id = "11489834-544c-4ca2-ac5d-e8c875dc2a5b"; // Change this to the ID of the audio you want to stream
+    const { id } = (currentRequest() as APICallMeta).pathParams;
+
+    log.info(`Streaming audio with id: ${id}`);
+
+    if (!id) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "Invalid ID" }));
+      return;
+    }
+
     const data = await drizzle.select().from(media).where(eq(media.id, id));
 
     if (!data) {
@@ -159,5 +169,42 @@ export const streamAudio = api.raw(
 
       fs.createReadStream(filePath).pipe(res);
     }
+  }
+);
+
+export const deleteAudio = api<{ id: string }, { message: string }>(
+  {
+    expose: true,
+    method: "DELETE",
+    path: "/audio/:id",
+  },
+  async () => {
+    const { id } = (currentRequest() as APICallMeta).pathParams;
+
+    if (!id) {
+      throw new Error("Invalid ID");
+    }
+
+    log.info(`Deleting audio with id: ${id}`);
+
+    const file = await drizzle.select().from(media).where(eq(media.id, id));
+
+    if (!file) {
+      throw new Error("Audio not found");
+    }
+
+    // check on the file system if the file exists
+    const filePath = path.join("uploads", file[0].fileName);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    const data = await drizzle.delete(media).where(eq(media.id, id));
+
+    if (!data) {
+      throw new Error("Audio not found");
+    }
+
+    return { message: "Audio deleted successfully" };
   }
 );
